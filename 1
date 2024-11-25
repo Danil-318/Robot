@@ -1,0 +1,96 @@
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/io/openni_grabber.h>
+#include <pcl/visualization/cloud_viewer.h>
+
+// Класс для Робота
+class Robot {
+public:
+    void moveForward() {
+        std::cout << "Робот движется вперед." << std::endl;
+    }
+
+    void moveBackward() {
+        std::cout << "Робот движется назад." << std::endl;
+    }
+
+    void moveLeft() {
+        std::cout << "Робот движется влево." << std::endl;
+    }
+
+    void moveRight() {
+        std::cout << "Робот движется вправо." << std::endl;
+    }
+
+    void stop() {
+        std::cout << "Робот остановился." << std::endl;
+    }
+};
+
+// Функция для обработки данных от лидара
+void lidarCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud) {
+    std::cout << "Получены данные от лидара: " << cloud->points.size() << " точек." << std::endl;
+    // Здесь можно добавить код для обработки облака точек
+}
+
+// Основная функция
+int main() {
+    Robot myRobot;
+    char command;
+
+    // Установка захвата лидара
+    pcl::OpenNIGrabber grabber;
+    grabber.registerCallback(boost::bind(&lidarCallback, _1));
+    grabber.start();
+    
+    // Инициализация видеокамеры
+    cv::VideoCapture cap(0);
+    if (!cap.isOpened()) {
+        std::cerr << "Ошибка открытия видеокамеры!" << std::endl;
+        return -1;
+    }
+
+    std::cout << "Управление роботом-доставщиком:" << std::endl;
+    std::cout << "w - Вперед" << std::endl;
+    std::cout << "s - Назад" << std::endl;
+    std::cout << "a - Влево" << std::endl;
+    std::cout << "d - Вправо" << std::endl;
+    std::cout << "q - Выход" << std::endl;
+
+    while (true) {
+        std::cout << "Введите команду: ";
+        std::cin >> command;
+
+        switch (command) {
+            case 'w':
+                myRobot.moveForward();
+                break;
+            case 's':
+                myRobot.moveBackward();
+                break;
+            case 'a':
+                myRobot.moveLeft();
+                break;
+            case 'd':
+                myRobot.moveRight();
+                break;
+            case 'q':
+                myRobot.stop();
+                std::cout << "Выход из программы." << std::endl;
+                grabber.stop();
+                return 0;
+            default:
+                std::cout << "Некорректная команда. Попробуйте снова." << std::endl;
+        }
+
+        // Обработка видео
+        cv::Mat frame;
+        cap >> frame; // Захват изображения с видеокамеры
+        cv::imshow("Камера", frame); // Отображение изображения
+        if (cv::waitKey(30) >= 0) break; // Завершение при нажатии клавиши
+    }
+
+    return 0;
+}
